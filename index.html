@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>ECLIPSE</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/game.css">
+<link rel="stylesheet" href="css/menu.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+<img class="film-overlay" src="assets/textures/fx/Film.gif" alt="" aria-hidden="true">
+
+<div class="cam-osd" aria-hidden="true">
+  <div class="cam-status">
+    <div id="cam-rec" class="cam-rec hidden">
+      <img src="assets/textures/hud/CircleForRec.svg" alt="">
+      REC
+    </div>
+    <img id="cam-battery" class="cam-battery hidden" src="assets/textures/hud/Battery.svg" alt="">
+  </div>
+  <div class="cam-timestamp">
+    <span class="cam-time">--:--</span>
+    <span class="cam-date">--- -- ----</span>
+  </div>
+  <div id="cam-mode" class="cam-menu-tag">MENU</div>
+</div>
+<div id="pause-dimmer" class="pause-dimmer hidden" aria-hidden="true"></div>
+
+<!-- HUD -->
+<div id="hud" class="hud hidden">
+  <div class="hud-run">
+    <span class="hud-wave">WAVE 1</span>
+    <span class="hud-time">0:00</span>
+  </div>
+
+  <div class="hud-dash-bar hud-bar">
+    <span class="hud-label">DASH</span>
+    <div class="hud-track dash-bar-track">
+      <div class="hud-fill dash-bar-fill"></div>
+    </div>
+  </div>
+
+  <div class="hud-health hud-bar">
+    <div class="hud-track hp-track">
+      <div class="hud-fill hp-fill"></div>
+    </div>
+    <span class="hp-current"></span>
+    <span class="hp-max"></span>
+  </div>
+
+  <div class="hud-special">
+    <div class="special-spires">
+    </div>
+  </div>
+</div>
+
+<!-- Главное меню -->
+<div id="menu" class="screen">
+  <div class="title-block">
+    <div class="title-kicker">PROTOTYPE VERSION</div>
+    <h1 class="title">ECLIPSE</h1>
+  </div>
+  <nav class="menu-buttons">
+    <button id="btn-play" class="menu-btn">Играть</button>
+    <button id="btn-settings" class="menu-btn">Настройки</button>
+    <button id="btn-exit" class="menu-btn">Выход</button>
+  </nav>
+</div>
+
+<!-- Настройки -->
+<div id="settings" class="screen hidden">
+  <h2 class="subtitle">Настройки</h2>
+  <nav class="menu-buttons">
+    <button id="btn-fullscreen" class="menu-btn">Полный экран</button>
+    <button id="btn-back" class="menu-btn">Назад</button>
+  </nav>
+</div>
+
+<!-- Пауза во время игры. -->
+<div id="pause" class="screen hidden">
+  <h2 class="subtitle">Пауза</h2>
+  <nav class="menu-buttons">
+    <button id="btn-resume" class="menu-btn">Продолжить</button>
+    <button id="btn-pause-settings" class="menu-btn">Настройки</button>
+    <button id="btn-pause-menu" class="menu-btn">В главное меню</button>
+  </nav>
+</div>
+
+<script src="js/input.js"></script>
+<script src="js/ship.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/textures.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

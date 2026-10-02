@@ -1,0 +1,336 @@
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--bg) 8%, transparent) 0px,
+      transparent 1px,
+      transparent 2px,
+      color-mix(in srgb, var(--bg) 8%, transparent) 3px
+    );
+  opacity: 0.5;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image:
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><filter id="noise"><feTurbulence baseFrequency="0.9" numOctaves="4"/></filter><rect width="200" height="200" filter="url(%23noise)" opacity="0.08"/></svg>'),
+    radial-gradient(ellipse at center, transparent 40%, color-mix(in srgb, var(--bg) 50%, transparent) 100%);
+  animation: vhs-glitch 4s infinite;
+}
+
+@keyframes vhs-glitch {
+  0%, 98% { opacity: 1; transform: translateX(0); }
+  98.5% { opacity: 0.95; transform: translateX(2px); }
+  99% { opacity: 1; transform: translateX(-1px); }
+  99.5% { opacity: 0.98; transform: translateX(0); }
+}
+
+/* Плавающие текстуры */
+.floating-texture {
+  position: fixed;
+  width: 68px;
+  height: 68px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: screen;
+  filter: brightness(0.65) contrast(1.15);
+}
+
+.floating-texture canvas {
+  width: 100%;
+  height: 100%;
+  filter: none;
+}
+
+@keyframes float-texture {
+  0%, 100% { opacity: 0; transform: translate(0, 0) scale(0.95); }
+  20%, 65% { opacity: 0.045; }
+  45% { opacity: 0.025; transform: translate(var(--tx), var(--ty)) scale(1); }
+}
+
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  cursor: crosshair;
+  filter: contrast(1.08) brightness(0.98);
+  opacity: 1;
+}
+
+.film-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.037;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.cam-osd {
+  position: fixed;
+  inset: 24px;
+  z-index: 3;
+  color: color-mix(in srgb, var(--fg) 82%, transparent);
+  font: 400 17px 'Tsap-Tsarap', serif;
+  letter-spacing: 0.12em;
+  pointer-events: none;
+  text-shadow: 0 1px 4px color-mix(in srgb, var(--bg) 80%, transparent);
+}
+
+.cam-status {
+  position: absolute;
+  top: 10px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cam-rec {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cam-rec img {
+  width: 12px;
+  height: 12px;
+  animation: rec-blink 1.2s steps(2, start) infinite;
+}
+
+@keyframes rec-blink {
+  to { opacity: 0.2; }
+}
+
+.cam-timestamp {
+  position: absolute;
+  left: 28px;
+  bottom: 24px;
+  display: grid;
+  gap: 2px;
+  font: 400 24px 'Tsap-Tsarap', serif;
+  letter-spacing: 0.08em;
+}
+
+.cam-date {
+  font-size: 21px;
+}
+
+.cam-battery {
+  display: block;
+  width: 42px;
+  height: 22px;
+  object-fit: contain;
+  filter: brightness(0.62);
+}
+
+.cam-menu-tag {
+  position: absolute;
+  right: 16px;
+  bottom: 22px;
+  font-size: 18px;
+}
+
+.pause-dimmer {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  pointer-events: none;
+}
+
+.hud {
+  position: fixed;
+  top: 20px;
+  left: 22px;
+  z-index: 1;
+  width: 300px;
+  color: var(--fg);
+  font: 9px monospace;
+  pointer-events: none;
+}
+
+.hud-bar {
+  position: relative;
+  width: 240px;
+}
+
+.hud-dash-bar {
+  height: 16px;
+}
+
+.hud-health {
+  height: 36px;
+  margin-top: 5px;
+}
+
+.hud-label {
+  position: absolute;
+  top: 3px;
+  left: 0;
+  color: var(--muted);
+  font-family: 'Tsap-Tsarap', serif;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+}
+
+.hud-dash-bar .hud-label {
+  color: var(--fg);
+  opacity: 0.88;
+}
+
+.hud-track {
+  position: absolute;
+  overflow: hidden;
+  background-color: var(--bg);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+}
+
+.dash-bar-track {
+  top: 0;
+  left: 54px;
+  width: 186px;
+  height: 12px;
+  background-image: url('../assets/textures/hud/Dash-bar-background.svg');
+}
+
+.hp-track {
+  top: 0;
+  left: 0;
+  width: 240px;
+  height: 16px;
+  background-image: url('../assets/textures/hud/HP-background.svg');
+}
+
+.hud-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 100% 100%;
+}
+
+.dash-bar-fill {
+  background-image: url('../assets/textures/hud/Dash-bar-fill.svg');
+}
+
+.hp-fill {
+  background-image: url('../assets/textures/hud/HP-fill.svg');
+}
+
+.hp-current,
+.hp-max {
+  position: absolute;
+  top: -5px;
+  left: 250px;
+  white-space: nowrap;
+}
+
+.hp-current {
+  color: var(--fg);
+  font-family: 'Tsap-Tsarap', serif;
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.hp-max {
+  top: 3px;
+  left: 286px;
+  color: var(--muted);
+  font-family: 'Tsap-Tsarap', serif;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.hud-special {
+  width: max-content;
+  height: 36px;
+  margin-top: -10px;
+}
+
+.special-spires {
+  display: flex;
+  gap: 7px;
+  width: max-content;
+  height: 36px;
+}
+
+.special-track {
+  position: relative;
+  width: 14px;
+  height: 36px;
+  background-image: url('../assets/textures/hud/Special-spire-background.svg');
+}
+
+.special-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('../assets/textures/hud/Special-spire-fill.svg');
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  background-size: 100% 100%;
+}
+
+.hud-run {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.hud-wave {
+  color: var(--muted);
+  font-family: 'Tsap-Tsarap', serif;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+}
+
+.hud-time {
+  min-width: 5ch;
+  color: var(--fg);
+  font-family: 'Tsap-Tsarap', serif;
+  font-size: 54px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 8px var(--line);
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .cam-osd { inset: 12px; }
+  .cam-status { top: 8px; right: 8px; gap: 10px; }
+  .cam-timestamp { left: 16px; bottom: 16px; font-size: 18px; }
+  .cam-date { font-size: 16px; }
+  .cam-menu-tag { right: 8px; bottom: 8px; font-size: 15px; }
+}

@@ -1,0 +1,7 @@
+# Служебные файлы ОС
+.DS_Store
+Thumbs.db
+
+# Редакторы и IDE
+.vscode/
+.idea/
