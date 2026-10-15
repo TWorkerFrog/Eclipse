@@ -32,13 +32,10 @@ function gameColor(name) {
 const ASSETS = {
   ship: new Image(),
   bullet: new Image(),
-  bigBullet: new Image(),
 };
 
 ASSETS.ship.src = 'assets/textures/projectiles/Ship.svg';
 ASSETS.bullet.src = 'assets/textures/projectiles/Bullet.svg';
-ASSETS.bigBullet.src = 'assets/textures/projectiles/BigBullet.svg';
-
 
 const COLORS = {
   background: gameColor('--bg'),
@@ -52,11 +49,9 @@ class Game {
   constructor() {
     this.state = STATE.MENU;
     this.animationTimeSeconds = 0;
-    this.hud = new Hud();
     this.wave = 1;
     this.cameraOffsetX = 0;
     this.cameraOffsetY = 0;
-    this.cameraTilt = 0;
     this.reset();
   }
 
@@ -68,62 +63,51 @@ class Game {
   toMenu() {
     this.state = STATE.MENU;
     this.reset();
-    updateCameraOverlay('MENU');
     pauseDimmer.classList.add('hidden');
     menuEl.classList.remove('hidden');
     settingsEl.classList.add('hidden');
     pauseEl.classList.add('hidden');
+    document.getElementById('hud').classList.add('hidden');
   }
 
   pause() {
     this.state = STATE.PAUSED;
-    updateCameraOverlay('PAUSE');
     pauseDimmer.classList.remove('hidden');
     pauseEl.classList.remove('hidden');
   }
 
   resume() {
     this.state = STATE.PLAY;
-    updateCameraOverlay('GAME');
     pauseDimmer.classList.add('hidden');
     pauseEl.classList.add('hidden');
+    settingsEl.classList.add('hidden');
   }
 
   update(elapsedSeconds) {
     this.animationTimeSeconds += elapsedSeconds;
 
-    if (this.state === STATE.MENU || this.state === STATE.PAUSED) {
-      this.cameraTilt += (0 - this.cameraTilt) * Math.min(1, 6 * elapsedSeconds);
+    if (this.state === STATE.MENU) {
+      return;
+    }
+
+    if (this.state === STATE.PAUSED) {
+      if (input.pausePressed) this.resume();
       return;
     }
 
     this.elapsedRunSeconds += elapsedSeconds;
 
-    if (input.pausePressed || input.escapePressed) {
+    if (input.pausePressed) {
       this.pause();
       return;
     }
 
     this.ship.update(elapsedSeconds, input);
 
-    // 0.03 radians is about 1.7 degrees; the effect lasts 0.18 seconds.
-    const targetTilt = this.ship.dashEffectRemainingSeconds > 0
-      ? Math.sin(this.ship.dashDirectionRadians) * 0.03
-      : 0;
-    this.cameraTilt += (targetTilt - this.cameraTilt) * Math.min(1, 6 * elapsedSeconds);
-
     const targetCameraX = (this.ship.positionX - worldWidth / 2) * 0.08;
     const targetCameraY = (this.ship.positionY - worldHeight / 2) * 0.08;
     this.cameraOffsetX += (targetCameraX - this.cameraOffsetX) * 3 * elapsedSeconds;
     this.cameraOffsetY += (targetCameraY - this.cameraOffsetY) * 3 * elapsedSeconds;
-
-    for (const bullet of this.ship.bullets) {
-      bullet.update(elapsedSeconds);
-    }
-
-    this.ship.bullets = this.ship.bullets.filter(
-      (bullet) => bullet.remainingSeconds > 0,
-    );
   }
 
   draw() {
@@ -131,12 +115,7 @@ class Game {
     ctx.fillRect(0, 0, worldWidth, worldHeight);
 
     ctx.save();
-    ctx.translate(worldWidth / 2, worldHeight / 2);
-    ctx.rotate(this.cameraTilt);
-    ctx.translate(
-      -worldWidth / 2 - this.cameraOffsetX,
-      -worldHeight / 2 - this.cameraOffsetY,
-    );
+    ctx.translate(-this.cameraOffsetX, -this.cameraOffsetY);
 
     if (this.state === STATE.PLAY) {
       const gradient = ctx.createRadialGradient(
@@ -182,31 +161,19 @@ class Game {
     }
 
     if (this.state === STATE.MENU) {
-      this.hud.hide();
       ctx.restore();
       return;
     }
 
     if (this.state === STATE.PAUSED) {
-      // В паузе рисуем корабль и пули, но не обновляем
-      for (const bullet of this.ship.bullets) {
-        bullet.draw(ctx);
-      }
       this.ship.draw(ctx);
       ctx.restore();
-      this.hud.draw(this.ship, this);
       return;
-    }
-
-    for (const bullet of this.ship.bullets) {
-      bullet.draw(ctx);
     }
 
     this.ship.draw(ctx);
 
     ctx.restore();
-
-    this.hud.draw(this.ship, this);
   }
 }
 
@@ -214,37 +181,6 @@ const menuEl = document.getElementById('menu');
 const settingsEl = document.getElementById('settings');
 const pauseEl = document.getElementById('pause');
 const pauseDimmer = document.getElementById('pause-dimmer');
-const tapeTimeEl = document.querySelector('.cam-time');
-const tapeDateEl = document.querySelector('.cam-date');
-const cameraModeEl = document.getElementById('cam-mode');
-const cameraRecEl = document.getElementById('cam-rec');
-const cameraBatteryEl = document.getElementById('cam-battery');
-
-function updateCameraOverlay(mode) {
-  cameraModeEl.textContent = mode;
-  cameraRecEl.classList.toggle('hidden', mode !== 'GAME');
-  cameraBatteryEl.classList.toggle('hidden', mode !== 'GAME');
-}
-
-function updateTapeClock() {
-  const now = new Date();
-  const timeParts = new Intl.DateTimeFormat('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  }).formatToParts(now);
-  const getTimePart = (type) => timeParts.find((part) => part.type === type).value;
-
-  tapeTimeEl.textContent = `${getTimePart('dayPeriod')} ${getTimePart('hour')}:${getTimePart('minute')}`;
-  tapeDateEl.textContent = new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  }).format(now).toUpperCase();
-}
-
-updateTapeClock();
-setInterval(updateTapeClock, 1000);
 
 document.getElementById('btn-play').onclick = () => {
   menuEl.classList.add('hidden');
@@ -252,8 +188,8 @@ document.getElementById('btn-play').onclick = () => {
   pauseEl.classList.add('hidden');
   pauseDimmer.classList.add('hidden');
   game.state = STATE.PLAY;
-  updateCameraOverlay('GAME');
   game.reset();
+  document.getElementById('hud').classList.remove('hidden');
 };
 
 document.getElementById('btn-settings').onclick = () => {
@@ -295,12 +231,8 @@ function loop(frameTimeMilliseconds) {
 
   game.update(elapsedSeconds);
   game.draw();
-  floatingTextures.update(game.state === STATE.PLAY);
 
   input.shootPressed = false;
-  input.specialPressed = false;
-  input.dashPressed = false;
-  input.escapePressed = false;
   input.pausePressed = false;
 
   requestAnimationFrame(loop);

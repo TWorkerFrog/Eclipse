@@ -1,18 +1,22 @@
 const fullscreenButton = document.getElementById('btn-fullscreen');
 
-fullscreenButton.addEventListener('click', async () => {
+async function toggleFullscreen() {
   try {
     if (document.fullscreenElement) {
       await document.exitFullscreen();
-      fullscreenButton.textContent = 'Полный экран';
     } else {
       await document.documentElement.requestFullscreen();
-      fullscreenButton.textContent = 'Оконный режим';
     }
   } catch (err) {
     console.warn('Fullscreen API недоступен:', err);
   }
+}
+
+fullscreenButton.addEventListener('click', async () => {
+  await toggleFullscreen();
 });
+
+window.addEventListener('fullscreen-toggle', toggleFullscreen);
 
 document.addEventListener('fullscreenchange', () => {
   fullscreenButton.textContent = document.fullscreenElement

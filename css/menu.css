@@ -54,6 +54,29 @@
   letter-spacing: 0.16em;
 }
 
+.settings-screen {
+  gap: 4px;
+  padding: 20px;
+}
+
+.settings-screen .subtitle {
+  flex: 0 0 auto;
+  margin-bottom: 4px;
+}
+
+.settings-actions {
+  flex: 0 0 auto;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+}
+
+.settings-main-actions {
+  flex-direction: column;
+  gap: 6px;
+}
+
 .menu-buttons {
   display: flex;
   flex-direction: column;
@@ -64,6 +87,10 @@
 
 .screen:not(.hidden) {
   animation: screen-in 0.35s ease both;
+}
+
+@media (max-height: 720px) {
+  .settings-screen { gap: 0; }
 }
 
 .menu-btn {

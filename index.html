@@ -9,31 +9,10 @@
 </head>
 <body>
 <canvas id="game"></canvas>
-<img class="film-overlay" src="assets/textures/fx/Film.gif" alt="" aria-hidden="true">
-
-<div class="cam-osd" aria-hidden="true">
-  <div class="cam-status">
-    <div id="cam-rec" class="cam-rec hidden">
-      <img src="assets/textures/hud/CircleForRec.svg" alt="">
-      REC
-    </div>
-    <img id="cam-battery" class="cam-battery hidden" src="assets/textures/hud/Battery.svg" alt="">
-  </div>
-  <div class="cam-timestamp">
-    <span class="cam-time">--:--</span>
-    <span class="cam-date">--- -- ----</span>
-  </div>
-  <div id="cam-mode" class="cam-menu-tag">MENU</div>
-</div>
 <div id="pause-dimmer" class="pause-dimmer hidden" aria-hidden="true"></div>
 
-<!-- HUD -->
+<!-- HUD (VISUAL ONLY - dash / HP / special, all filled at 100%) -->
 <div id="hud" class="hud hidden">
-  <div class="hud-run">
-    <span class="hud-wave">WAVE 1</span>
-    <span class="hud-time">0:00</span>
-  </div>
-
   <div class="hud-dash-bar hud-bar">
     <span class="hud-label">DASH</span>
     <div class="hud-track dash-bar-track">
@@ -45,12 +24,14 @@
     <div class="hud-track hp-track">
       <div class="hud-fill hp-fill"></div>
     </div>
-    <span class="hp-current"></span>
-    <span class="hp-max"></span>
+    <span class="hp-current">100</span>
+    <span class="hp-max">/ 100</span>
   </div>
 
   <div class="hud-special">
     <div class="special-spires">
+      <div class="hud-track special-track"><div class="hud-fill special-fill"></div></div>
+      <div class="hud-track special-track"><div class="hud-fill special-fill"></div></div>
     </div>
   </div>
 </div>
@@ -69,9 +50,9 @@
 </div>
 
 <!-- Настройки -->
-<div id="settings" class="screen hidden">
+<div id="settings" class="screen settings-screen hidden">
   <h2 class="subtitle">Настройки</h2>
-  <nav class="menu-buttons">
+  <nav class="menu-buttons settings-actions settings-main-actions">
     <button id="btn-fullscreen" class="menu-btn">Полный экран</button>
     <button id="btn-back" class="menu-btn">Назад</button>
   </nav>
@@ -89,9 +70,7 @@
 
 <script src="js/input.js"></script>
 <script src="js/ship.js"></script>
-<script src="js/hud.js"></script>
 <script src="js/settings.js"></script>
-<script src="js/textures.js"></script>
 <script src="js/game.js"></script>
 </body>
 </html>
