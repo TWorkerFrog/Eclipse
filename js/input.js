@@ -4,7 +4,12 @@ class Input {
     this.mouse = { x: innerWidth / 2, y: innerHeight / 2 };
     this.shootPressed = false;
     this.shootHeld = false;
+    this.specialPressed = false;
     this.pausePressed = false;
+
+    window.addEventListener('contextmenu', (e) => {
+      if (e.target === canvas) e.preventDefault();
+    });
 
     window.addEventListener('mousemove', (e) => {
       this.mouse.x = e.clientX;
@@ -16,6 +21,7 @@ class Input {
         this.shootPressed = true;
         this.shootHeld = true;
       }
+      if (e.button === 2) this.specialPressed = true;
     });
     window.addEventListener('mouseup', (e) => {
       if (e.button === 0) this.shootHeld = false;

@@ -1,7 +1,7 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const input = new Input(canvas);
-const STATE = { MENU: 0, PLAY: 1, PAUSED: 2 };
+const STATE = { MENU: 0, PLAY: 1, PAUSED: 2, GAMEOVER: 3, VICTORY: 4 };
 
 let worldWidth = 0;
 let worldHeight = 0;
@@ -18,8 +18,12 @@ function makeStars() {
 }
 
 function resize() {
-  worldWidth = canvas.width = window.innerWidth;
-  worldHeight = canvas.height = window.innerHeight;
+  const pixelRatio = window.devicePixelRatio || 1;
+  worldWidth = window.innerWidth;
+  worldHeight = window.innerHeight;
+  canvas.width = Math.round(worldWidth * pixelRatio);
+  canvas.height = Math.round(worldHeight * pixelRatio);
+  ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   makeStars();
 }
 
@@ -32,10 +36,12 @@ function gameColor(name) {
 const ASSETS = {
   ship: new Image(),
   bullet: new Image(),
+  bigBullet: new Image(),
 };
 
 ASSETS.ship.src = 'assets/textures/projectiles/Ship.svg';
 ASSETS.bullet.src = 'assets/textures/projectiles/Bullet.svg';
+ASSETS.bigBullet.src = 'assets/textures/projectiles/BigBullet.svg';
 
 const COLORS = {
   background: gameColor('--bg'),
@@ -45,29 +51,56 @@ const COLORS = {
 
 window.addEventListener('resize', resize);
 
+function circlesOverlap(a, b) {
+  const dx = b.positionX - a.positionX;
+  const dy = b.positionY - a.positionY;
+  return Math.hypot(dx, dy) < a.collisionRadiusPixels + b.collisionRadiusPixels;
+}
+
+function formatRunTime(seconds) {
+  const total = Math.floor(Math.max(0, seconds));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
 class Game {
   constructor() {
     this.state = STATE.MENU;
     this.animationTimeSeconds = 0;
-    this.wave = 1;
     this.cameraOffsetX = 0;
     this.cameraOffsetY = 0;
+    this.waveManager = new WaveManager();
+    this.hud = new Hud();
+    this.playerBullets = [];
+    this.enemyBullets = [];
+    this.enemies = [];
+    this.shards = [];
     this.reset();
   }
 
   reset() {
     this.ship = new Ship(worldWidth / 2, worldHeight / 2);
     this.elapsedRunSeconds = 0;
+    this.playerBullets = [];
+    this.enemyBullets = [];
+    this.enemies = [];
+    this.shards = [];
+    this.cameraOffsetX = 0;
+    this.cameraOffsetY = 0;
+    this.waveManager.startRun();
   }
 
   toMenu() {
     this.state = STATE.MENU;
     this.reset();
-    pauseDimmer.classList.add('hidden');
+    hideAllScreens();
     menuEl.classList.remove('hidden');
-    settingsEl.classList.add('hidden');
-    pauseEl.classList.add('hidden');
-    document.getElementById('hud').classList.add('hidden');
+    this.hud.hide();
+  }
+
+  startRun() {
+    hideAllScreens();
+    this.state = STATE.PLAY;
+    this.reset();
   }
 
   pause() {
@@ -83,6 +116,21 @@ class Game {
     settingsEl.classList.add('hidden');
   }
 
+  endRun(victory) {
+    this.state = victory ? STATE.VICTORY : STATE.GAMEOVER;
+    this.hud.hide();
+    pauseDimmer.classList.remove('hidden');
+    const time = formatRunTime(this.elapsedRunSeconds);
+
+    if (victory) {
+      document.getElementById('victory-time').textContent = time;
+      victoryEl.classList.remove('hidden');
+    } else {
+      document.getElementById('defeat-time').textContent = time;
+      gameoverEl.classList.remove('hidden');
+    }
+  }
+
   update(elapsedSeconds) {
     this.animationTimeSeconds += elapsedSeconds;
 
@@ -95,6 +143,10 @@ class Game {
       return;
     }
 
+    if (this.state !== STATE.PLAY) {
+      return;
+    }
+
     this.elapsedRunSeconds += elapsedSeconds;
 
     if (input.pausePressed) {
@@ -102,8 +154,139 @@ class Game {
       return;
     }
 
-    this.ship.update(elapsedSeconds, input);
+    this.ship.update(elapsedSeconds, input, this.playerBullets);
+    this.spawnWaveEnemies(elapsedSeconds);
+    this.updateEntities(elapsedSeconds);
+    this.handleCollisions();
+    this.updateCamera(elapsedSeconds);
 
+    if (this.ship.hp <= 0) {
+      this.endRun(false);
+    } else if (this.waveManager.isRunComplete()) {
+      this.endRun(true);
+    }
+  }
+
+  spawnWaveEnemies(elapsedSeconds) {
+    const enemyType = this.waveManager.update(elapsedSeconds, this.enemies);
+    if (enemyType) {
+      this.enemies.push(this.createEdgeEnemy(enemyType));
+    }
+  }
+
+  createEdgeEnemy(type) {
+    const margin = 50;
+    const side = Math.floor(Math.random() * 4);
+    let x;
+    let y;
+
+    if (side === 0) {
+      x = margin + Math.random() * (worldWidth - margin * 2);
+      y = margin;
+    } else if (side === 1) {
+      x = worldWidth - margin;
+      y = margin + Math.random() * (worldHeight - margin * 2);
+    } else if (side === 2) {
+      x = margin + Math.random() * (worldWidth - margin * 2);
+      y = worldHeight - margin;
+    } else {
+      x = margin;
+      y = margin + Math.random() * (worldHeight - margin * 2);
+    }
+
+    return new Enemy(x, y, ENEMY_CONFIGS[type]);
+  }
+
+  updateEntities(elapsedSeconds) {
+    this.playerBullets = this.playerBullets.filter(
+      (bullet) => bullet.update(elapsedSeconds),
+    );
+    this.enemyBullets = this.enemyBullets.filter(
+      (bullet) => bullet.update(elapsedSeconds),
+    );
+
+    for (const enemy of this.enemies) {
+      enemy.update(elapsedSeconds, this.ship, this.enemyBullets);
+    }
+
+    this.shards = this.shards.filter((shard) => {
+      const result = shard.update(elapsedSeconds, this.ship);
+      if (result === 'collected') {
+        this.ship.addCharge(shard.chargeValue);
+        return false;
+      }
+      return result;
+    });
+  }
+
+  handleCollisions() {
+    const ship = this.ship;
+
+    for (const bullet of this.playerBullets) {
+      for (const enemy of this.enemies) {
+        if (enemy.isSpawning) continue;
+        if (bullet.type === 'regular' && bullet.lifetimeSeconds <= 0) break;
+        if (bullet.hitEnemies.has(enemy)) continue;
+        if (!circlesOverlap(bullet, enemy)) continue;
+
+        bullet.hitEnemies.add(enemy);
+        this.damageEnemy(enemy, bullet.damage);
+        if (bullet.type === 'regular') {
+          bullet.lifetimeSeconds = 0;
+          break;
+        }
+      }
+
+      if (bullet.type === 'special') {
+        this.enemyBullets = this.enemyBullets.filter((enemyBullet) => {
+          const dx = enemyBullet.positionX - bullet.positionX;
+          const dy = enemyBullet.positionY - bullet.positionY;
+          return Math.hypot(dx, dy) > bullet.eraseRadiusPixels
+            + enemyBullet.collisionRadiusPixels;
+        });
+      }
+    }
+    this.playerBullets = this.playerBullets.filter(
+      (bullet) => bullet.lifetimeSeconds > 0,
+    );
+
+    if (ship.damageInvulnerabilitySeconds <= 0) {
+      for (const enemyBullet of this.enemyBullets) {
+        if (!circlesOverlap(enemyBullet, ship)) continue;
+        ship.takeDamage(enemyBullet.damage);
+        enemyBullet.lifetimeSeconds = 0;
+        break;
+      }
+    }
+    this.enemyBullets = this.enemyBullets.filter(
+      (bullet) => bullet.lifetimeSeconds > 0,
+    );
+
+    if (ship.damageInvulnerabilitySeconds <= 0) {
+      for (const enemy of this.enemies) {
+        if (enemy.isSpawning) continue;
+        if (!circlesOverlap(enemy, ship)) continue;
+
+        ship.takeDamage(enemy.contactDamage);
+        if (enemy.type === 'kamikaze') enemy.hp = 0;
+        break;
+      }
+    }
+    this.enemies = this.enemies.filter((enemy) => enemy.hp > 0);
+  }
+
+  damageEnemy(enemy, damage) {
+    if (!enemy.takeDamage(damage)) return;
+    this.waveManager.registerKill();
+    for (let index = 0; index < enemy.shardCount; index += 1) {
+      this.shards.push(new Shard(
+        enemy.positionX + (Math.random() - 0.5) * 24,
+        enemy.positionY + (Math.random() - 0.5) * 24,
+      ));
+    }
+  }
+
+  updateCamera(elapsedSeconds) {
     const targetCameraX = (this.ship.positionX - worldWidth / 2) * 0.08;
     const targetCameraY = (this.ship.positionY - worldHeight / 2) * 0.08;
     this.cameraOffsetX += (targetCameraX - this.cameraOffsetX) * 3 * elapsedSeconds;
@@ -116,20 +299,6 @@ class Game {
 
     ctx.save();
     ctx.translate(-this.cameraOffsetX, -this.cameraOffsetY);
-
-    if (this.state === STATE.PLAY) {
-      const gradient = ctx.createRadialGradient(
-        this.ship.positionX, this.ship.positionY, 0,
-        this.ship.positionX, this.ship.positionY, 320
-      );
-      gradient.addColorStop(0, COLORS.foreground);
-      gradient.addColorStop(0.35, COLORS.foreground);
-      gradient.addColorStop(1, 'transparent');
-      ctx.fillStyle = gradient;
-      ctx.globalAlpha = 0.06;
-      ctx.fillRect(this.ship.positionX - 320, this.ship.positionY - 320, 640, 640);
-      ctx.globalAlpha = 1;
-    }
 
     const isPaused = this.state === STATE.PAUSED;
     const starOpacity = isPaused ? 0.4 : 1;
@@ -144,7 +313,7 @@ class Game {
     }
     ctx.globalAlpha = 1;
 
-    if (this.state !== STATE.PLAY) {
+    if (this.state === STATE.MENU) {
       const spotlightX = input.mouse.x + this.cameraOffsetX;
       const spotlightY = input.mouse.y + this.cameraOffsetY;
       const gradient = ctx.createRadialGradient(
@@ -158,22 +327,33 @@ class Game {
       ctx.globalAlpha = 0.08;
       ctx.fillRect(spotlightX - 260, spotlightY - 260, 520, 520);
       ctx.globalAlpha = 1;
-    }
-
-    if (this.state === STATE.MENU) {
       ctx.restore();
       return;
     }
 
-    if (this.state === STATE.PAUSED) {
-      this.ship.draw(ctx);
-      ctx.restore();
-      return;
+    for (const shard of this.shards) {
+      shard.draw(ctx);
+    }
+
+    for (const enemy of this.enemies) {
+      enemy.draw(ctx);
+    }
+
+    for (const bullet of this.enemyBullets) {
+      bullet.draw(ctx);
+    }
+
+    for (const bullet of this.playerBullets) {
+      bullet.draw(ctx);
     }
 
     this.ship.draw(ctx);
 
     ctx.restore();
+
+    if (this.state === STATE.PLAY || this.state === STATE.PAUSED) {
+      this.hud.draw(this.ship, this);
+    }
   }
 }
 
@@ -181,16 +361,21 @@ const menuEl = document.getElementById('menu');
 const settingsEl = document.getElementById('settings');
 const pauseEl = document.getElementById('pause');
 const pauseDimmer = document.getElementById('pause-dimmer');
+const victoryEl = document.getElementById('victory');
+const gameoverEl = document.getElementById('gameover');
 
-document.getElementById('btn-play').onclick = () => {
-  menuEl.classList.add('hidden');
-  settingsEl.classList.add('hidden');
-  pauseEl.classList.add('hidden');
+function hideAllScreens() {
+  for (const element of [menuEl, settingsEl, pauseEl, victoryEl, gameoverEl]) {
+    element.classList.add('hidden');
+  }
   pauseDimmer.classList.add('hidden');
-  game.state = STATE.PLAY;
-  game.reset();
-  document.getElementById('hud').classList.remove('hidden');
-};
+}
+
+document.getElementById('btn-play').onclick = () => game.startRun();
+document.getElementById('btn-again').onclick = () => game.startRun();
+document.getElementById('btn-restart').onclick = () => game.startRun();
+document.getElementById('btn-victory-menu').onclick = () => game.toMenu();
+document.getElementById('btn-gameover-menu').onclick = () => game.toMenu();
 
 document.getElementById('btn-settings').onclick = () => {
   menuEl.classList.add('hidden');
@@ -233,6 +418,7 @@ function loop(frameTimeMilliseconds) {
   game.draw();
 
   input.shootPressed = false;
+  input.specialPressed = false;
   input.pausePressed = false;
 
   requestAnimationFrame(loop);

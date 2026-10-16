@@ -11,8 +11,12 @@
 <canvas id="game"></canvas>
 <div id="pause-dimmer" class="pause-dimmer hidden" aria-hidden="true"></div>
 
-<!-- HUD (VISUAL ONLY - dash / HP / special, all filled at 100%) -->
 <div id="hud" class="hud hidden">
+  <div class="hud-run">
+    <span class="hud-wave">ВОЛНА 1</span>
+    <span class="hud-time">0:00</span>
+  </div>
+
   <div class="hud-dash-bar hud-bar">
     <span class="hud-label">DASH</span>
     <div class="hud-track dash-bar-track">
@@ -24,22 +28,19 @@
     <div class="hud-track hp-track">
       <div class="hud-fill hp-fill"></div>
     </div>
-    <span class="hp-current">100</span>
-    <span class="hp-max">/ 100</span>
+    <span class="hp-current"></span>
+    <span class="hp-max"></span>
   </div>
 
   <div class="hud-special">
-    <div class="special-spires">
-      <div class="hud-track special-track"><div class="hud-fill special-fill"></div></div>
-      <div class="hud-track special-track"><div class="hud-fill special-fill"></div></div>
-    </div>
+    <div class="special-spires"></div>
   </div>
 </div>
 
 <!-- Главное меню -->
 <div id="menu" class="screen">
   <div class="title-block">
-    <div class="title-kicker">PROTOTYPE VERSION</div>
+    <div class="title-kicker">ALPHA VERSION</div>
     <h1 class="title">ECLIPSE</h1>
   </div>
   <nav class="menu-buttons">
@@ -58,7 +59,6 @@
   </nav>
 </div>
 
-<!-- Пауза во время игры. -->
 <div id="pause" class="screen hidden">
   <h2 class="subtitle">Пауза</h2>
   <nav class="menu-buttons">
@@ -68,8 +68,31 @@
   </nav>
 </div>
 
+<div id="victory" class="screen result-screen hidden">
+  <h2 class="subtitle result-title">ПОБЕДА</h2>
+  <p class="run-result">Время забега: <span id="victory-time">0:00</span></p>
+  <nav class="menu-buttons">
+    <button id="btn-again" class="menu-btn">Ещё раз</button>
+    <button id="btn-victory-menu" class="menu-btn">В главное меню</button>
+  </nav>
+</div>
+
+<div id="gameover" class="screen result-screen hidden">
+  <h2 class="subtitle result-title">ПОРАЖЕНИЕ</h2>
+  <p class="run-result">Продержался: <span id="defeat-time">0:00</span></p>
+  <nav class="menu-buttons">
+    <button id="btn-restart" class="menu-btn">Ещё раз</button>
+    <button id="btn-gameover-menu" class="menu-btn">В главное меню</button>
+  </nav>
+</div>
+
 <script src="js/input.js"></script>
+<script src="js/bullet.js"></script>
+<script src="js/shard.js"></script>
+<script src="js/enemy.js"></script>
+<script src="js/waves.js"></script>
 <script src="js/ship.js"></script>
+<script src="js/hud.js"></script>
 <script src="js/settings.js"></script>
 <script src="js/game.js"></script>
 </body>

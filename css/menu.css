@@ -54,6 +54,28 @@
   letter-spacing: 0.16em;
 }
 
+.run-result {
+  margin: -6px 0 28px;
+  color: var(--muted);
+  font-family: 'Tsap-Tsarap', serif;
+  font-size: 20px;
+  letter-spacing: 0.1em;
+}
+
+.run-result span {
+  color: var(--fg);
+}
+
+.result-title {
+  font-size: clamp(64px, 10vw, 128px);
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+.result-screen .run-result {
+  margin-bottom: 36px;
+}
+
 .settings-screen {
   gap: 4px;
   padding: 20px;
