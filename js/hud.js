@@ -34,13 +34,6 @@ class Hud {
     }
   }
 
-  formatTime(seconds) {
-    const total = Math.floor(Math.max(0, seconds));
-    const minutes = Math.floor(total / 60);
-    const rest = String(total % 60).padStart(2, '0');
-    return `${minutes}:${rest}`;
-  }
-
   draw(ship, game) {
     this.setVisible(true);
 
@@ -51,7 +44,7 @@ class Hud {
     const hp = this.clamp(ship.hp / ship.maxHp);
     this.hpFill.style.clipPath = `inset(0 ${(1 - hp) * 100}% 0 0)`;
 
-    this.timeDisplay.textContent = this.formatTime(game.elapsedRunSeconds);
+    this.timeDisplay.textContent = formatRunTime(game.elapsedRunSeconds);
     this.wave.textContent = `ВОЛНА ${game.waveManager.wave}`;
 
     const charge = this.clamp(ship.charge);

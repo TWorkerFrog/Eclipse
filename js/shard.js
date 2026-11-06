@@ -4,24 +4,26 @@ class Shard {
     this.positionY = y;
 
     const angle = Math.random() * Math.PI * 2;
-    const speed = 40 + Math.random() * 90;
-    this.velocityX = Math.cos(angle) * speed;
-    this.velocityY = Math.sin(angle) * speed;
+    const scatterSpeed = 40 + Math.random() * 90;
+    this.velocityX = Math.cos(angle) * scatterSpeed;
+    this.velocityY = Math.sin(angle) * scatterSpeed;
 
-    this.totalLifetimeSeconds = 3;
-    this.lifetimeSeconds = 3;
+    this.totalLifetimeSeconds = 3; // Длительность жизни
+    this.lifetimeSeconds = this.totalLifetimeSeconds;
     this.collisionRadiusPixels = 6;
 
-    this.chargeValue = 0.25;
+    this.chargeValue = 0.25; // Процент заряда от одного осколка
 
     this.attractionRadiusPixels = 90;
-    this.attractionPixelsPerSecondSquared = 1500;
     this.pickupRadiusPixels = 20;
     this.rotationRadians = Math.random() * Math.PI;
+    this.isAttracted = false;
+    this.homingSpeed = 300;
+    this.magnetCooldownSeconds = 0;
+    this.magnetCooldownDurationSeconds = 0.4; // Пауза магнита после отлипания
   }
 
   update(elapsedSeconds, ship) {
-    this.lifetimeSeconds -= elapsedSeconds;
     this.rotationRadians += elapsedSeconds * 2;
 
     const dx = ship.positionX - this.positionX;
@@ -32,13 +34,31 @@ class Shard {
       return 'collected';
     }
 
-    if (distance < this.attractionRadiusPixels) {
-      this.velocityX += dx / distance
-        * this.attractionPixelsPerSecondSquared * elapsedSeconds;
-      this.velocityY += dy / distance
-        * this.attractionPixelsPerSecondSquared * elapsedSeconds;
+    this.magnetCooldownSeconds = Math.max(
+      0,
+      this.magnetCooldownSeconds - elapsedSeconds,
+    );
+
+    // Проверка активации притягивания
+    const wasAttracted = this.isAttracted;
+    this.isAttracted = distance < this.attractionRadiusPixels
+      && this.magnetCooldownSeconds <= 0;
+    if (wasAttracted && !this.isAttracted) {
+      this.magnetCooldownSeconds = this.magnetCooldownDurationSeconds;
     }
 
+    if (this.isAttracted) {
+      this.velocityX = dx / distance * this.homingSpeed;
+      this.velocityY = dy / distance * this.homingSpeed;
+      const travel = Math.min(this.homingSpeed * elapsedSeconds, distance);
+      this.positionX += dx / distance * travel;
+      this.positionY += dy / distance * travel;
+      return true; 
+    }
+
+    this.lifetimeSeconds -= elapsedSeconds;
+
+    // Трение
     const dragMultiplier = Math.exp(-2.5 * elapsedSeconds);
     this.velocityX *= dragMultiplier;
     this.velocityY *= dragMultiplier;
@@ -60,8 +80,8 @@ class Shard {
     ctx.translate(this.positionX, this.positionY);
     ctx.rotate(this.rotationRadians);
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = COLORS.foreground;
-    ctx.shadowColor = COLORS.foreground;
+    ctx.fillStyle = colors.foreground;
+    ctx.shadowColor = colors.foreground;
     ctx.shadowBlur = 8;
     ctx.beginPath();
     ctx.moveTo(0, -6);

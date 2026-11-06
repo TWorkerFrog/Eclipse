@@ -1,20 +1,15 @@
-const WAVE_CONFIGS = [
-  { budget: 8, weights: { kamikaze: 0.6, basic: 0.4 } },
-  { budget: 13, weights: { kamikaze: 0.45, basic: 0.55 } },
-  { budget: 17, weights: { kamikaze: 0.35, basic: 0.45, tank: 0.2 } },
-];
-
 class WaveManager {
   constructor() {
     this.wave = 0;
-    this.remainingToSpawn = 0;
+    this.remainingToSpawn = 0; // Сколько врагов нужно создать в текущей волне
     this.weights = {};
-    this.spawnTimerSeconds = 0;
-    this.betweenWavesSeconds = 0;
-    this.killTimestamps = [];
+    this.spawnTimerSeconds = 0; // Таймер для спавна следующего врага внутри волны
+    this.betweenWavesSeconds = 0; // Пауза медлу волнами
+    this.killTimestamps = []; // Массив времени последних убийств
     this.finished = false;
   }
 
+  // Начинает полный забег: сбрасывает волну и запускает первую.
   startRun() {
     this.wave = 0;
     this.killTimestamps = [];
@@ -22,19 +17,22 @@ class WaveManager {
     this.beginNextWave();
   }
 
+  // Функция для начала волны
   beginNextWave() {
     this.wave += 1;
-    const config = WAVE_CONFIGS[this.wave - 1];
+    const config = waveConfigs[this.wave - 1];
     this.remainingToSpawn = config.budget;
     this.weights = config.weights;
     this.spawnTimerSeconds = 0.8;
     this.betweenWavesSeconds = 0;
   }
 
+  // Вызывается при смерти врага. Записывает время убийства для подсчёта темпа убийств
   registerKill() {
     this.killTimestamps.push(performance.now() / 1000);
   }
 
+  // Считает, сколько в среднем врагов убивали в секунду за последние 6 секунд
   recentKillsPerSecond() {
     const now = performance.now() / 1000;
     this.killTimestamps = this.killTimestamps.filter(
@@ -47,13 +45,14 @@ class WaveManager {
     return this.finished;
   }
 
+  // Основная логика спавна внутри волны. Каждый кадр уменьшает таймер, и когда он доходит до 0:
   update(elapsedSeconds, enemies) {
     if (this.finished) return null;
 
     if (this.remainingToSpawn <= 0) {
       if (enemies.length > 0) return null;
 
-      if (this.wave >= WAVE_CONFIGS.length) {
+      if (this.wave >= waveConfigs.length) {
         this.finished = true;
         return null;
       }
@@ -70,12 +69,13 @@ class WaveManager {
 
     const killRate = this.recentKillsPerSecond();
     const interval = Math.max(0.5, 1.6 - killRate * 0.25);
-    this.spawnTimerSeconds = interval * (0.8 + Math.random() * 0.4);
+    this.spawnTimerSeconds = interval * 0.8;
     this.remainingToSpawn -= 1;
 
     return this.pickEnemyType();
   }
 
+  // Случайно выбирает тип следующего врага по весам из конфига волны
   pickEnemyType() {
     const totalWeight = Object.values(this.weights)
       .reduce((sum, weight) => sum + weight, 0);

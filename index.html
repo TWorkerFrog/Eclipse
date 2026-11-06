@@ -11,6 +11,7 @@
 <canvas id="game"></canvas>
 <div id="pause-dimmer" class="pause-dimmer hidden" aria-hidden="true"></div>
 
+<!-- HUD -->
 <div id="hud" class="hud hidden">
   <div class="hud-run">
     <span class="hud-wave">ВОЛНА 1</span>
@@ -59,6 +60,7 @@
   </nav>
 </div>
 
+<!-- Пауза -->
 <div id="pause" class="screen hidden">
   <h2 class="subtitle">Пауза</h2>
   <nav class="menu-buttons">
@@ -68,24 +70,27 @@
   </nav>
 </div>
 
+<!-- Победа -->
 <div id="victory" class="screen result-screen hidden">
   <h2 class="subtitle result-title">ПОБЕДА</h2>
-  <p class="run-result">Время забега: <span id="victory-time">0:00</span></p>
+  <p class="run-result">Время забега: <span id="victory-time"></span></p>
   <nav class="menu-buttons">
     <button id="btn-again" class="menu-btn">Ещё раз</button>
     <button id="btn-victory-menu" class="menu-btn">В главное меню</button>
   </nav>
 </div>
 
+<!-- Поражение -->
 <div id="gameover" class="screen result-screen hidden">
   <h2 class="subtitle result-title">ПОРАЖЕНИЕ</h2>
-  <p class="run-result">Продержался: <span id="defeat-time">0:00</span></p>
+  <p class="run-result">Продержался: <span id="defeat-time"></span></p>
   <nav class="menu-buttons">
     <button id="btn-restart" class="menu-btn">Ещё раз</button>
     <button id="btn-gameover-menu" class="menu-btn">В главное меню</button>
   </nav>
 </div>
 
+<script src="js/config.js"></script>
 <script src="js/input.js"></script>
 <script src="js/bullet.js"></script>
 <script src="js/shard.js"></script>

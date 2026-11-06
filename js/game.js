@@ -1,7 +1,7 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const input = new Input(canvas);
-const STATE = { MENU: 0, PLAY: 1, PAUSED: 2, GAMEOVER: 3, VICTORY: 4 };
+const states = { Menu: 0, Play: 1, Paused: 2, GameOver: 3, Victory: 4 };
 
 let worldWidth = 0;
 let worldHeight = 0;
@@ -33,17 +33,17 @@ function gameColor(name) {
     .trim();
 }
 
-const ASSETS = {
+const assets = {
   ship: new Image(),
   bullet: new Image(),
   bigBullet: new Image(),
 };
 
-ASSETS.ship.src = 'assets/textures/projectiles/Ship.svg';
-ASSETS.bullet.src = 'assets/textures/projectiles/Bullet.svg';
-ASSETS.bigBullet.src = 'assets/textures/projectiles/BigBullet.svg';
+assets.ship.src = 'assets/textures/projectiles/Ship.svg';
+assets.bullet.src = 'assets/textures/projectiles/Bullet.svg';
+assets.bigBullet.src = 'assets/textures/projectiles/BigBullet.svg';
 
-const COLORS = {
+const colors = {
   background: gameColor('--bg'),
   foreground: gameColor('--fg'),
   muted: gameColor('--muted'),
@@ -51,6 +51,7 @@ const COLORS = {
 
 window.addEventListener('resize', resize);
 
+// Проверка колизии предметов
 function circlesOverlap(a, b) {
   const dx = b.positionX - a.positionX;
   const dy = b.positionY - a.positionY;
@@ -62,9 +63,10 @@ function formatRunTime(seconds) {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
+// Основной класс игры. Содержит состояние, все массивы объектов (пули, враги, осколки)
 class Game {
   constructor() {
-    this.state = STATE.MENU;
+    this.state = states.Menu;
     this.animationTimeSeconds = 0;
     this.cameraOffsetX = 0;
     this.cameraOffsetY = 0;
@@ -89,35 +91,35 @@ class Game {
     this.waveManager.startRun();
   }
 
+  startRun() {
+    hideAllScreens();
+    this.state = states.Play;
+    this.reset();
+  }
+
   toMenu() {
-    this.state = STATE.MENU;
+    this.state = states.Menu;
     this.reset();
     hideAllScreens();
     menuEl.classList.remove('hidden');
     this.hud.hide();
   }
 
-  startRun() {
-    hideAllScreens();
-    this.state = STATE.PLAY;
-    this.reset();
-  }
-
   pause() {
-    this.state = STATE.PAUSED;
+    this.state = states.Paused;
     pauseDimmer.classList.remove('hidden');
     pauseEl.classList.remove('hidden');
   }
 
   resume() {
-    this.state = STATE.PLAY;
+    this.state = states.Play;
     pauseDimmer.classList.add('hidden');
     pauseEl.classList.add('hidden');
     settingsEl.classList.add('hidden');
   }
 
   endRun(victory) {
-    this.state = victory ? STATE.VICTORY : STATE.GAMEOVER;
+    this.state = victory ? states.Victory : states.GameOver;
     this.hud.hide();
     pauseDimmer.classList.remove('hidden');
     const time = formatRunTime(this.elapsedRunSeconds);
@@ -131,19 +133,20 @@ class Game {
     }
   }
 
+  // Главный кадр игры. Вызывается каждый тик (~60 раз в секунду).
   update(elapsedSeconds) {
     this.animationTimeSeconds += elapsedSeconds;
 
-    if (this.state === STATE.MENU) {
+    if (this.state === states.Menu) {
       return;
     }
 
-    if (this.state === STATE.PAUSED) {
+    if (this.state === states.Paused) {
       if (input.pausePressed) this.resume();
       return;
     }
 
-    if (this.state !== STATE.PLAY) {
+    if (this.state !== states.Play) {
       return;
     }
 
@@ -154,7 +157,7 @@ class Game {
       return;
     }
 
-    this.ship.update(elapsedSeconds, input, this.playerBullets);
+    this.ship.update(elapsedSeconds, input, this.playerBullets, this.cameraOffsetX, this.cameraOffsetY);
     this.spawnWaveEnemies(elapsedSeconds);
     this.updateEntities(elapsedSeconds);
     this.handleCollisions();
@@ -167,6 +170,7 @@ class Game {
     }
   }
 
+  // Спавн врагов текущей волны. Спрашивает у WaveManager, нужно ли создать нового врага и если да — создаёт его у случайного края экрана.
   spawnWaveEnemies(elapsedSeconds) {
     const enemyType = this.waveManager.update(elapsedSeconds, this.enemies);
     if (enemyType) {
@@ -174,6 +178,7 @@ class Game {
     }
   }
 
+  // Создаёт нового врага на случайном краю арены (сверху, снизу, слева или справа).
   createEdgeEnemy(type) {
     const margin = 50;
     const side = Math.floor(Math.random() * 4);
@@ -194,9 +199,10 @@ class Game {
       y = margin + Math.random() * (worldHeight - margin * 2);
     }
 
-    return new Enemy(x, y, ENEMY_CONFIGS[type]);
+    return new Enemy(x, y, enemyConfigs[type]);
   }
 
+  // Движение и жизнь всех объектов на сцене: пули игрока, пули врагов, враги, осколки.
   updateEntities(elapsedSeconds) {
     this.playerBullets = this.playerBullets.filter(
       (bullet) => bullet.update(elapsedSeconds),
@@ -219,6 +225,7 @@ class Game {
     });
   }
 
+  // Обработка всех взаимодействий (столкновений) между объектами:
   handleCollisions() {
     const ship = this.ship;
 
@@ -238,43 +245,40 @@ class Game {
       }
 
       if (bullet.type === 'special') {
-        this.enemyBullets = this.enemyBullets.filter((enemyBullet) => {
-          const dx = enemyBullet.positionX - bullet.positionX;
-          const dy = enemyBullet.positionY - bullet.positionY;
-          return Math.hypot(dx, dy) > bullet.eraseRadiusPixels
-            + enemyBullet.collisionRadiusPixels;
-        });
+        this.enemyBullets = this.enemyBullets.filter(
+          (enemyBullet) => !circlesOverlap(bullet, enemyBullet),
+        );
       }
     }
     this.playerBullets = this.playerBullets.filter(
       (bullet) => bullet.lifetimeSeconds > 0,
     );
 
-    if (ship.damageInvulnerabilitySeconds <= 0) {
-      for (const enemyBullet of this.enemyBullets) {
-        if (!circlesOverlap(enemyBullet, ship)) continue;
-        ship.takeDamage(enemyBullet.damage);
-        enemyBullet.lifetimeSeconds = 0;
-        break;
-      }
+    for (const enemyBullet of this.enemyBullets) {
+      if (!circlesOverlap(enemyBullet, ship)) continue;
+      ship.takeDamage(enemyBullet.damage);
+      enemyBullet.lifetimeSeconds = 0;
+      break;
     }
     this.enemyBullets = this.enemyBullets.filter(
       (bullet) => bullet.lifetimeSeconds > 0,
     );
 
-    if (ship.damageInvulnerabilitySeconds <= 0) {
-      for (const enemy of this.enemies) {
-        if (enemy.isSpawning) continue;
-        if (!circlesOverlap(enemy, ship)) continue;
+    for (const enemy of this.enemies) {
+      if (enemy.isSpawning) continue;
+      if (enemy.contactCooldownSeconds > 0) continue;
+      if (!circlesOverlap(enemy, ship)) continue;
 
-        ship.takeDamage(enemy.contactDamage);
-        if (enemy.type === 'kamikaze') enemy.hp = 0;
-        break;
-      }
+      ship.takeDamage(enemy.contactDamage);
+      enemy.contactCooldownSeconds = enemy.contactDamageCooldownSeconds;
+      this.damageEnemy(enemy, enemy.contactDamage);
+      break;
     }
     this.enemies = this.enemies.filter((enemy) => enemy.hp > 0);
   }
 
+
+  // Нанесение урона конкретному врагу. Если hp <= 0 — враг считается убитым:
   damageEnemy(enemy, damage) {
     if (!enemy.takeDamage(damage)) return;
     this.waveManager.registerKill();
@@ -286,6 +290,7 @@ class Game {
     }
   }
 
+  // Плавное следование камеры за кораблем игрока.
   updateCamera(elapsedSeconds) {
     const targetCameraX = (this.ship.positionX - worldWidth / 2) * 0.08;
     const targetCameraY = (this.ship.positionY - worldHeight / 2) * 0.08;
@@ -293,18 +298,19 @@ class Game {
     this.cameraOffsetY += (targetCameraY - this.cameraOffsetY) * 3 * elapsedSeconds;
   }
 
+  // Отрисовка всего кадра: звёзды, враги, пули, осколки, корабль и HUD.
   draw() {
-    ctx.fillStyle = COLORS.background;
+    ctx.fillStyle = colors.background;
     ctx.fillRect(0, 0, worldWidth, worldHeight);
 
     ctx.save();
     ctx.translate(-this.cameraOffsetX, -this.cameraOffsetY);
 
-    const isPaused = this.state === STATE.PAUSED;
+    const isPaused = this.state === states.Paused;
     const starOpacity = isPaused ? 0.4 : 1;
     const twinkleSpeed = isPaused ? 0.5 : 2;
 
-    ctx.fillStyle = COLORS.muted;
+    ctx.fillStyle = colors.muted;
     for (const star of stars) {
       ctx.globalAlpha = starOpacity * star.brightness * (
         0.35 + 0.65 * Math.sin(this.animationTimeSeconds * twinkleSpeed + star.phase)
@@ -313,15 +319,15 @@ class Game {
     }
     ctx.globalAlpha = 1;
 
-    if (this.state === STATE.MENU) {
+    if (this.state === states.Menu) {
       const spotlightX = input.mouse.x + this.cameraOffsetX;
       const spotlightY = input.mouse.y + this.cameraOffsetY;
       const gradient = ctx.createRadialGradient(
         spotlightX, spotlightY, 0,
         spotlightX, spotlightY, 260
       );
-      gradient.addColorStop(0, COLORS.foreground);
-      gradient.addColorStop(0.35, COLORS.foreground);
+      gradient.addColorStop(0, colors.foreground);
+      gradient.addColorStop(0.35, colors.foreground);
       gradient.addColorStop(1, 'transparent');
       ctx.fillStyle = gradient;
       ctx.globalAlpha = 0.08;
@@ -351,7 +357,7 @@ class Game {
 
     ctx.restore();
 
-    if (this.state === STATE.PLAY || this.state === STATE.PAUSED) {
+    if (this.state === states.Play || this.state === states.Paused) {
       this.hud.draw(this.ship, this);
     }
   }
@@ -385,7 +391,7 @@ document.getElementById('btn-settings').onclick = () => {
 document.getElementById('btn-back').onclick = () => {
   settingsEl.classList.add('hidden');
 
-  if (game.state === STATE.PAUSED) {
+  if (game.state === states.Paused) {
     pauseEl.classList.remove('hidden');
     return;
   }
@@ -407,6 +413,7 @@ resize();
 const game = new Game();
 let lastFrameTimeMilliseconds = performance.now();
 
+// Главный игровой цикл (requestAnimationFrame). Считает время между кадрами.
 function loop(frameTimeMilliseconds) {
   const elapsedSeconds = Math.min(
     (frameTimeMilliseconds - lastFrameTimeMilliseconds) / 1000,

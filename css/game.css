@@ -51,7 +51,7 @@ canvas {
   pointer-events: none;
 }
 
-/* HUD (VISUAL ONLY - dash / HP / special, all bars start filled at 100%) */
+
 .hud {
   position: fixed;
   top: 20px;

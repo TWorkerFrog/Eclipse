@@ -5,4 +5,4 @@ Thumbs.db
 # Редакторы и IDE
 .vscode/
 .idea/
-docs/
+temp/
