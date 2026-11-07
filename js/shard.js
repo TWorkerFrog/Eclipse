@@ -1,5 +1,7 @@
 class Shard {
-  constructor(x, y) {
+  // Значения из ShardBase берутся по умолчанию;
+  // игра передаёт итоговые с учётом бонусов корабля
+  constructor(x, y, options = {}) {
     this.positionX = x;
     this.positionY = y;
 
@@ -8,13 +10,16 @@ class Shard {
     this.velocityX = Math.cos(angle) * scatterSpeed;
     this.velocityY = Math.sin(angle) * scatterSpeed;
 
-    this.totalLifetimeSeconds = 3; // Длительность жизни
+    this.totalLifetimeSeconds = options.lifetimeSeconds
+      ?? shardBase.lifetimeSeconds; // Длительность жизни
     this.lifetimeSeconds = this.totalLifetimeSeconds;
     this.collisionRadiusPixels = 6;
 
-    this.chargeValue = 0.25; // Процент заряда от одного осколка
+    this.chargeValue = options.chargeValue
+      ?? shardBase.chargeValue; // Процент заряда от одного осколка
 
-    this.attractionRadiusPixels = 90;
+    this.attractionRadiusPixels = options.attractionRadiusPixels
+      ?? shardBase.attractionRadiusPixels;
     this.pickupRadiusPixels = 20;
     this.rotationRadians = Math.random() * Math.PI;
     this.isAttracted = false;

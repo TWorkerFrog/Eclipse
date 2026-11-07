@@ -1,7 +1,7 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const input = new Input(canvas);
-const states = { Menu: 0, Play: 1, Paused: 2, GameOver: 3, Victory: 4 };
+const states = { Menu: 0, Play: 1, Paused: 2, GameOver: 3, Victory: 4, Selection: 5 };
 
 let worldWidth = 0;
 let worldHeight = 0;
@@ -70,8 +70,13 @@ class Game {
     this.animationTimeSeconds = 0;
     this.cameraOffsetX = 0;
     this.cameraOffsetY = 0;
+    this.cameraTilt = 0;
     this.waveManager = new WaveManager();
     this.hud = new Hud();
+    this.upgrades = new UpgradeSystem(this);
+    this.acquiredUpgrades = new Set();
+    this.lastUpgradeWave = 0;
+    this.effects = []; // Визуальные эффекты, например взрыв Бабаха
     this.playerBullets = [];
     this.enemyBullets = [];
     this.enemies = [];
@@ -88,6 +93,11 @@ class Game {
     this.shards = [];
     this.cameraOffsetX = 0;
     this.cameraOffsetY = 0;
+    this.cameraTilt = 0;
+    this.acquiredUpgrades.clear();
+    this.lastUpgradeWave = 0;
+    this.upgrades.reset();
+    this.effects = [];
     this.waveManager.startRun();
   }
 
@@ -157,7 +167,14 @@ class Game {
       return;
     }
 
-    this.ship.update(elapsedSeconds, input, this.playerBullets, this.cameraOffsetX, this.cameraOffsetY);
+    this.ship.update(
+      elapsedSeconds,
+      input,
+      this.playerBullets,
+      this.cameraOffsetX,
+      this.cameraOffsetY,
+      this.cameraTilt,
+    );
     this.spawnWaveEnemies(elapsedSeconds);
     this.updateEntities(elapsedSeconds);
     this.handleCollisions();
@@ -165,8 +182,19 @@ class Game {
 
     if (this.ship.hp <= 0) {
       this.endRun(false);
-    } else if (this.waveManager.isRunComplete()) {
+      return;
+    }
+
+    if (this.waveManager.isRunComplete()) {
       this.endRun(true);
+      return;
+    }
+
+    // Волна зачищена: показать выбор улучшения один раз на волну
+    if (this.waveManager.waveCleared
+      && this.lastUpgradeWave !== this.waveManager.wave) {
+      this.lastUpgradeWave = this.waveManager.wave;
+      if (this.upgrades.showChoices(this.waveManager.wave)) return;
     }
   }
 
@@ -204,9 +232,12 @@ class Game {
 
   // Движение и жизнь всех объектов на сцене: пули игрока, пули врагов, враги, осколки.
   updateEntities(elapsedSeconds) {
-    this.playerBullets = this.playerBullets.filter(
-      (bullet) => bullet.update(elapsedSeconds),
-    );
+    this.playerBullets = this.playerBullets.filter((bullet) => {
+      const alive = bullet.update(elapsedSeconds);
+      // Бабах: особая пуля взрывается при конце времени жизни или выходе из арены
+      if (!alive && bullet.type === 'special') this.explodeBullet(bullet);
+      return alive;
+    });
     this.enemyBullets = this.enemyBullets.filter(
       (bullet) => bullet.update(elapsedSeconds),
     );
@@ -219,9 +250,18 @@ class Game {
       const result = shard.update(elapsedSeconds, this.ship);
       if (result === 'collected') {
         this.ship.addCharge(shard.chargeValue);
+        // Лечебные осколки: заряд начисляется как раньше, плюс лечение
+        if (this.ship.upgrades.healing_shards) {
+          this.ship.heal(this.ship.healingShardsHealAmount);
+        }
         return false;
       }
       return result;
+    });
+
+    this.effects = this.effects.filter((effect) => {
+      effect.remainingSeconds -= elapsedSeconds;
+      return effect.remainingSeconds > 0;
     });
   }
 
@@ -237,9 +277,10 @@ class Game {
         if (!circlesOverlap(bullet, enemy)) continue;
 
         bullet.hitEnemies.add(enemy);
-        this.damageEnemy(enemy, bullet.damage);
+        this.damageEnemy(enemy, bullet.damage, bullet.type);
         if (bullet.type === 'regular') {
-          bullet.lifetimeSeconds = 0;
+          // Рикошет: перенаправить в ближайшего живого врага, иначе пуля умирает
+          if (!this.tryRicochet(bullet)) bullet.lifetimeSeconds = 0;
           break;
         }
       }
@@ -256,7 +297,9 @@ class Game {
 
     for (const enemyBullet of this.enemyBullets) {
       if (!circlesOverlap(enemyBullet, ship)) continue;
-      ship.takeDamage(enemyBullet.damage);
+      if (ship.invulnerableSeconds <= 0) {
+        ship.takeDamage(enemyBullet.damage);
+      }
       enemyBullet.lifetimeSeconds = 0;
       break;
     }
@@ -264,38 +307,128 @@ class Game {
       (bullet) => bullet.lifetimeSeconds > 0,
     );
 
+    // Контакт: сначала таран (все задетые враги), потом урон кораблю
     for (const enemy of this.enemies) {
       if (enemy.isSpawning) continue;
-      if (enemy.contactCooldownSeconds > 0) continue;
       if (!circlesOverlap(enemy, ship)) continue;
+
+      if (ship.dashEffectRemainingSeconds > 0
+        && ship.upgrades.ram
+        && !ship.dashHitEnemies.has(enemy)) {
+        ship.dashHitEnemies.add(enemy);
+        this.damageEnemy(enemy, ship.ramDamage, 'dash');
+        const knockbackAngle = Math.atan2(
+          enemy.positionY - ship.positionY,
+          enemy.positionX - ship.positionX,
+        );
+        enemy.knockbackVelocityX = Math.cos(knockbackAngle) * 300;
+        enemy.knockbackVelocityY = Math.sin(knockbackAngle) * 300;
+        enemy.knockbackRemainingSeconds = 0.2;
+      }
+
+      if (ship.invulnerableSeconds > 0) continue;
+      if (enemy.contactCooldownSeconds > 0) continue;
 
       ship.takeDamage(enemy.contactDamage);
       enemy.contactCooldownSeconds = enemy.contactDamageCooldownSeconds;
-      this.damageEnemy(enemy, enemy.contactDamage);
-      break;
+      this.damageEnemy(enemy, enemy.contactDamage, 'contact');
     }
     this.enemies = this.enemies.filter((enemy) => enemy.hp > 0);
   }
 
+  // Рикошет: ближайший враг в радиусе, которого пуля ещё не задела
+  tryRicochet(bullet) {
+    if ((bullet.bouncesRemaining ?? 0) <= 0) return false;
 
-  // Нанесение урона конкретному врагу. Если hp <= 0 — враг считается убитым:
-  damageEnemy(enemy, damage) {
+    const ricochetRangePixels = 320;
+    let target = null;
+    let targetDistance = ricochetRangePixels;
+    for (const enemy of this.enemies) {
+      if (enemy.isSpawning || bullet.hitEnemies.has(enemy)) continue;
+      const distance = Math.hypot(
+        enemy.positionX - bullet.positionX,
+        enemy.positionY - bullet.positionY,
+      );
+      if (distance < targetDistance) {
+        target = enemy;
+        targetDistance = distance;
+      }
+    }
+    if (!target) return false;
+
+    bullet.bouncesRemaining -= 1;
+    const angleRadians = Math.atan2(
+      target.positionY - bullet.positionY,
+      target.positionX - bullet.positionX,
+    );
+    bullet.velocityX = Math.cos(angleRadians) * bulletBase.regular.speed;
+    bullet.velocityY = Math.sin(angleRadians) * bulletBase.regular.speed;
+    return true;
+  }
+
+  // Бабах: взрыв особой пули в конце полёта
+  explodeBullet(bullet) {
+    if (!this.ship.upgrades.boom) return;
+
+    const radius = this.ship.boomRadiusPixels;
+    for (const enemy of this.enemies) {
+      if (enemy.isSpawning) continue;
+      const distance = Math.hypot(
+        enemy.positionX - bullet.positionX,
+        enemy.positionY - bullet.positionY,
+      );
+      if (distance < radius + enemy.collisionRadiusPixels) {
+        this.damageEnemy(enemy, this.ship.boomDamage, 'effect');
+      }
+    }
+    this.enemies = this.enemies.filter((enemy) => enemy.hp > 0);
+
+    this.effects.push({
+      x: bullet.positionX,
+      y: bullet.positionY,
+      radiusPixels: radius,
+      durationSeconds: 0.2,
+      remainingSeconds: 0.2,
+    });
+  }
+
+
+  // Нанесение урона конкретному врагу. Если hp <= 0 — враг считается убитым.
+  // source: 'regular' | 'special' | 'dash' | 'effect' | 'contact'
+  damageEnemy(enemy, damage, source) {
     if (!enemy.takeDamage(damage)) return;
     this.waveManager.registerKill();
+    // Падальщик: лечение только за убийство обычной пулей
+    if (source === 'regular' && this.ship.upgrades.scavenger) {
+      this.ship.heal(this.ship.scavengerHealAmount);
+    }
+    const ship = this.ship;
     for (let index = 0; index < enemy.shardCount; index += 1) {
       this.shards.push(new Shard(
         enemy.positionX + (Math.random() - 0.5) * 24,
         enemy.positionY + (Math.random() - 0.5) * 24,
+        {
+          lifetimeSeconds: shardBase.lifetimeSeconds
+            + ship.shardLifetimeBonusSeconds,
+          chargeValue: shardBase.chargeValue + ship.shardChargeBonus,
+          attractionRadiusPixels: shardBase.attractionRadiusPixels
+            + ship.shardAttractionBonusPixels,
+        },
       ));
     }
   }
 
-  // Плавное следование камеры за кораблем игрока.
+  // Плавное следование камеры за кораблем игрока и наклон во время дэша.
   updateCamera(elapsedSeconds) {
     const targetCameraX = (this.ship.positionX - worldWidth / 2) * 0.08;
     const targetCameraY = (this.ship.positionY - worldHeight / 2) * 0.08;
     this.cameraOffsetX += (targetCameraX - this.cameraOffsetX) * 3 * elapsedSeconds;
     this.cameraOffsetY += (targetCameraY - this.cameraOffsetY) * 3 * elapsedSeconds;
+
+    const targetTilt = this.ship.dashEffectRemainingSeconds > 0
+      ? Math.sin(this.ship.dashDirectionRadians) * 0.03
+      : 0;
+    this.cameraTilt += (targetTilt - this.cameraTilt) * 6 * elapsedSeconds;
   }
 
   // Отрисовка всего кадра: звёзды, враги, пули, осколки, корабль и HUD.
@@ -304,7 +437,13 @@ class Game {
     ctx.fillRect(0, 0, worldWidth, worldHeight);
 
     ctx.save();
-    ctx.translate(-this.cameraOffsetX, -this.cameraOffsetY);
+    // Наклон камеры при дэше: поворот вокруг центра экрана
+    ctx.translate(worldWidth / 2, worldHeight / 2);
+    ctx.rotate(this.cameraTilt);
+    ctx.translate(
+      -worldWidth / 2 - this.cameraOffsetX,
+      -worldHeight / 2 - this.cameraOffsetY,
+    );
 
     const isPaused = this.state === states.Paused;
     const starOpacity = isPaused ? 0.4 : 1;
@@ -345,6 +484,24 @@ class Game {
       enemy.draw(ctx);
     }
 
+    // Затухающее кольцо взрыва Бабаха
+    for (const effect of this.effects) {
+      const progress = effect.remainingSeconds / effect.durationSeconds;
+      ctx.globalAlpha = progress;
+      ctx.strokeStyle = colors.foreground;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(
+        effect.x,
+        effect.y,
+        effect.radiusPixels * (1.4 - progress * 0.4),
+        0,
+        Math.PI * 2,
+      );
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
     for (const bullet of this.enemyBullets) {
       bullet.draw(ctx);
     }
@@ -369,9 +526,12 @@ const pauseEl = document.getElementById('pause');
 const pauseDimmer = document.getElementById('pause-dimmer');
 const victoryEl = document.getElementById('victory');
 const gameoverEl = document.getElementById('gameover');
+const upgradeScreenEl = document.getElementById('upgrade-screen');
 
 function hideAllScreens() {
-  for (const element of [menuEl, settingsEl, pauseEl, victoryEl, gameoverEl]) {
+  for (const element of [
+    menuEl, settingsEl, pauseEl, victoryEl, gameoverEl, upgradeScreenEl,
+  ]) {
     element.classList.add('hidden');
   }
   pauseDimmer.classList.add('hidden');
@@ -427,6 +587,7 @@ function loop(frameTimeMilliseconds) {
   input.shootPressed = false;
   input.specialPressed = false;
   input.pausePressed = false;
+  input.dashPressed = false;
 
   requestAnimationFrame(loop);
 }

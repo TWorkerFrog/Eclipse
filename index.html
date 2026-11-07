@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/game.css">
 <link rel="stylesheet" href="css/menu.css">
+<link rel="stylesheet" href="css/upgrades.css">
 </head>
 <body>
 <canvas id="game"></canvas>
@@ -41,7 +42,7 @@
 <!-- Главное меню -->
 <div id="menu" class="screen">
   <div class="title-block">
-    <div class="title-kicker">ALPHA VERSION</div>
+    <div class="title-kicker">BETA VERSION</div>
     <h1 class="title">ECLIPSE</h1>
   </div>
   <nav class="menu-buttons">
@@ -90,6 +91,12 @@
   </nav>
 </div>
 
+<!-- Экран выбора улучшения -->
+<div id="upgrade-screen" class="screen upgrade-screen hidden">
+  <h2 class="subtitle">Выбери улучшение</h2>
+  <div class="upgrade-cards"></div>
+</div>
+
 <script src="js/config.js"></script>
 <script src="js/input.js"></script>
 <script src="js/bullet.js"></script>
@@ -98,6 +105,7 @@
 <script src="js/waves.js"></script>
 <script src="js/ship.js"></script>
 <script src="js/hud.js"></script>
+<script src="js/upgrades.js"></script>
 <script src="js/settings.js"></script>
 <script src="js/game.js"></script>
 </body>

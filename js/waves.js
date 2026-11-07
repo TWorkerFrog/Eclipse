@@ -7,6 +7,7 @@ class WaveManager {
     this.betweenWavesSeconds = 0; // Пауза медлу волнами
     this.killTimestamps = []; // Массив времени последних убийств
     this.finished = false;
+    this.waveCleared = false; // Волна зачищена: сигнал для экрана улучшений
   }
 
   // Начинает полный забег: сбрасывает волну и запускает первую.
@@ -25,6 +26,7 @@ class WaveManager {
     this.weights = config.weights;
     this.spawnTimerSeconds = 0.8;
     this.betweenWavesSeconds = 0;
+    this.waveCleared = false;
   }
 
   // Вызывается при смерти врага. Записывает время убийства для подсчёта темпа убийств
@@ -57,12 +59,15 @@ class WaveManager {
         return null;
       }
 
+      // Волна зачищена: игра может показать выбор улучшения.
+      // Пауза между волнами при этом не идёт, пока открыт экран выбора
+      this.waveCleared = true;
       this.betweenWavesSeconds += elapsedSeconds;
       if (this.betweenWavesSeconds >= 1.5) this.beginNextWave();
       return null;
     }
 
-    if (enemies.length >= 9) return null;
+    if (enemies.length >= 12) return null;
 
     this.spawnTimerSeconds -= elapsedSeconds;
     if (this.spawnTimerSeconds > 0) return null;

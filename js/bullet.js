@@ -33,6 +33,7 @@ class Bullet extends Projectile {
     this.lifetimeSeconds = options.lifetimeSeconds ?? base.lifetimeSeconds;
     this.damage = options.damage ?? base.damage;
     this.hitEnemies = new Set();
+    this.bouncesRemaining = options.bouncesRemaining ?? 0; // Рикошет
   }
 
   draw(ctx) {

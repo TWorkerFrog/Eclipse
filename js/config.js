@@ -18,6 +18,13 @@ const enemyBulletBase = {
   lifetimeSeconds: 4,
 };
 
+// База осколков; бонусы забега на Ship добавляются поверх
+const shardBase = {
+  lifetimeSeconds: 3,
+  chargeValue: 0.25,
+  attractionRadiusPixels: 90,
+};
+
 const enemyConfigs = {
   kamikaze: {
     type: 'kamikaze',
@@ -66,7 +73,13 @@ const enemyConfigs = {
 };
 
 const waveConfigs = [
-  { budget: 8, weights: { basic: 0.5, kamikaze: 0.5 } },
-  { budget: 6, weights: { kamikaze: 0.45, basic: 0.55 } },
-  { budget: 4, weights: { tank: 1.0 } },
+  { budget: 8, weights: { kamikaze: 0.6, basic: 0.4 } },
+  { budget: 13, weights: { kamikaze: 0.45, basic: 0.55 } },
+  { budget: 17, weights: { kamikaze: 0.35, basic: 0.45, tank: 0.2 } },
+  { budget: 22, weights: { kamikaze: 0.3, basic: 0.45, tank: 0.25 } },
+  { budget: 28, weights: { kamikaze: 0.25, basic: 0.45, tank: 0.3 } },
+  { budget: 35, weights: { kamikaze: 0.2, basic: 0.45, tank: 0.35 } },
+  { budget: 43, weights: { kamikaze: 0.2, basic: 0.4, tank: 0.4 } },
+  { budget: 52, weights: { kamikaze: 0.15, basic: 0.4, tank: 0.45 } },
+  { budget: 62, weights: { kamikaze: 0.15, basic: 0.35, tank: 0.5 } },
 ];

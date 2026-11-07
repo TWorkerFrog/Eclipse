@@ -6,6 +6,7 @@ class Input {
     this.shootHeld = false;
     this.specialPressed = false;
     this.pausePressed = false;
+    this.dashPressed = false;
 
     window.addEventListener('contextmenu', (e) => {
       if (e.target === canvas) e.preventDefault();
@@ -33,6 +34,11 @@ class Input {
     window.addEventListener('keydown', (e) => {
       this.keys.add(e.code);
       if (e.code === 'KeyP' && !e.repeat) this.pausePressed = true;
+      // preventDefault, чтобы Space не прокручивал страницу
+      if (e.code === 'Space' && !e.repeat) {
+        e.preventDefault();
+        this.dashPressed = true;
+      }
       if (e.code === 'KeyF' && !e.repeat) {
         e.preventDefault();
         window.dispatchEvent(new Event('fullscreen-toggle'));

@@ -37,6 +37,11 @@ class Enemy {
     this.strafeDirection = Math.random() < 0.5 ? 1 : -1; // Направление уклонения
     this.strafeTimerSeconds = 1 + Math.random();
     this.hitFlashSeconds = 0; // Подстветка, сигнализирующая о попадании
+
+    // Отброс от тарана: не ограничен maxSpeed и живёт по своему таймеру
+    this.knockbackVelocityX = 0;
+    this.knockbackVelocityY = 0;
+    this.knockbackRemainingSeconds = 0;
   }
 
   // Время на спавн, чтобы не наносился урон
@@ -119,6 +124,19 @@ class Enemy {
 
     this.positionX += this.velocityX * elapsedSeconds;
     this.positionY += this.velocityY * elapsedSeconds;
+
+    if (this.knockbackRemainingSeconds > 0) {
+      this.knockbackRemainingSeconds = Math.max(
+        0,
+        this.knockbackRemainingSeconds - elapsedSeconds,
+      );
+      this.positionX += this.knockbackVelocityX * elapsedSeconds;
+      this.positionY += this.knockbackVelocityY * elapsedSeconds;
+      if (this.knockbackRemainingSeconds <= 0) {
+        this.knockbackVelocityX = 0;
+        this.knockbackVelocityY = 0;
+      }
+    }
 
     this.positionX = Math.max(
       this.collisionRadiusPixels,
