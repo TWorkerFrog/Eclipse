@@ -47,6 +47,7 @@ const colors = {
   background: gameColor('--bg'),
   foreground: gameColor('--fg'),
   muted: gameColor('--muted'),
+  accent: gameColor('--accent'),
 };
 
 window.addEventListener('resize', resize);
@@ -105,6 +106,7 @@ class Game {
     hideAllScreens();
     this.state = states.Play;
     this.reset();
+    music.startGame();
   }
 
   toMenu() {
@@ -113,6 +115,7 @@ class Game {
     hideAllScreens();
     menuEl.classList.remove('hidden');
     this.hud.hide();
+    music.startMenu();
   }
 
   pause() {
@@ -277,7 +280,13 @@ class Game {
         if (!circlesOverlap(bullet, enemy)) continue;
 
         bullet.hitEnemies.add(enemy);
-        this.damageEnemy(enemy, bullet.damage, bullet.type);
+        // Бабах: при каждом касании врага особым выстрелом взрыв по области
+        // вместо прямого урона, пуля при этом летит дальше как обычно
+        if (bullet.type === 'special' && this.ship.upgrades.boom) {
+          this.explodeBullet(bullet);
+        } else {
+          this.damageEnemy(enemy, bullet.damage, bullet.type);
+        }
         if (bullet.type === 'regular') {
           // Рикошет: перенаправить в ближайшего живого врага, иначе пуля умирает
           if (!this.tryRicochet(bullet)) bullet.lifetimeSeconds = 0;
@@ -398,6 +407,7 @@ class Game {
   damageEnemy(enemy, damage, source) {
     if (!enemy.takeDamage(damage)) return;
     this.waveManager.registerKill();
+    music.playSfx('explosionLow');
     // Падальщик: лечение только за убийство обычной пулей
     if (source === 'regular' && this.ship.upgrades.scavenger) {
       this.ship.heal(this.ship.scavengerHealAmount);
@@ -568,6 +578,16 @@ document.getElementById('btn-pause-settings').onclick = () => {
 };
 
 document.getElementById('btn-pause-menu').onclick = () => game.toMenu();
+
+// Автоплей запрещён до первого жеста: музыка меню стартует при первом
+// нажатии мыши или клавише, а не только по клику
+const startMenuMusicOnce = () => {
+  if (game.state === states.Menu && music.menu.paused) music.startMenu();
+};
+document.addEventListener('pointerdown', startMenuMusicOnce);
+document.addEventListener('keydown', startMenuMusicOnce);
+
+music.bindButtons(document.querySelectorAll('button'));
 
 resize();
 const game = new Game();

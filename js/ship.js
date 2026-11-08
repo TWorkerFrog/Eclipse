@@ -225,14 +225,15 @@ class Ship {
     ctx.save();
     ctx.translate(this.positionX, this.positionY);
     ctx.rotate(this.angleToMouseRadians);
-    ctx.shadowColor = colors.foreground;
-    ctx.shadowBlur = 8;
+    // Свечение игрока красным: дифференциация от белых врагов
+    ctx.shadowColor = colors.accent;
+    ctx.shadowBlur = 10;
 
     if (assets.ship.complete && assets.ship.naturalWidth > 0) {
       ctx.rotate(Math.PI / 2);
       ctx.drawImage(assets.ship, -11.5, -14, 23, 28);
     } else {
-      ctx.fillStyle = colors.foreground;
+      ctx.fillStyle = colors.accent;
       ctx.beginPath();
       ctx.moveTo(13, 0); ctx.lineTo(-9, -8); ctx.lineTo(-4, 0); ctx.lineTo(-9, 8);
       ctx.closePath();

@@ -17,6 +17,7 @@
     --fg: #f8f8f8;
     --muted: #707070;
     --line: rgba(220, 220, 220, 0.25);
+    --accent: #b31217;
 }
 html, body {
     width: 100%;

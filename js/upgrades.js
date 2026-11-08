@@ -328,6 +328,7 @@ class UpgradeSystem {
     const definition = upgradeDefinitions.find((item) => item.id === id);
     if (!definition) return;
 
+    music.buttonSound('click');
     definition.apply(this.game);
     this.game.acquiredUpgrades.add(id);
     this.hide();

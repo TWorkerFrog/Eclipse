@@ -43,7 +43,8 @@ class Bullet extends Projectile {
     ctx.save();
     ctx.translate(this.positionX, this.positionY);
     ctx.rotate(Math.atan2(this.velocityY, this.velocityX) + Math.PI / 2);
-    ctx.shadowColor = colors.foreground;
+    // Пули игрока светятся красным в цвет корабля
+    ctx.shadowColor = colors.accent;
     ctx.shadowBlur = isSpecial ? 16 : 8;
 
     // Отрисовка на случай не прогрузки svg
@@ -52,7 +53,7 @@ class Bullet extends Projectile {
       const height = isSpecial ? 26 : 24;
       ctx.drawImage(sprite, -width / 2, -height / 2, width, height);
     } else {
-      ctx.strokeStyle = colors.foreground;
+      ctx.strokeStyle = colors.accent;
       ctx.lineWidth = isSpecial ? 6 : this.collisionRadiusPixels;
       ctx.beginPath();
       ctx.moveTo(-this.velocityX * 0.025, -this.velocityY * 0.025);

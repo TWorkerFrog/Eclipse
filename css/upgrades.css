@@ -20,6 +20,7 @@
   padding: 24px 20px;
   background-color: color-mix(in srgb, var(--bg) 82%, transparent);
   border: 1px solid var(--muted);
+  border-radius: 14px;
   color: var(--fg);
   cursor: pointer;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -65,10 +66,12 @@
 
 .upgrade-description {
   margin-top: 14px;
-  color: var(--muted);
+  color: var(--fg);
+  opacity: 0.92;
   font-family: 'Tsap-Tsarap', serif;
   font-size: 16px;
-  line-height: 1.4;
+  letter-spacing: 0.04em;
+  line-height: 1.45;
   text-align: center;
 }
 

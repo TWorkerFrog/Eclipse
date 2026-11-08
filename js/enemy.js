@@ -53,6 +53,7 @@ class Enemy {
   takeDamage(amount) {
     this.hp -= amount;
     this.hitFlashSeconds = 0.08;
+    music.playSfx('hit');
     return this.hp <= 0;
   }
 
