@@ -193,10 +193,13 @@ class Game {
       return;
     }
 
-    // Волна зачищена: показать выбор улучшения один раз на волну
+    // Волна зачищена: убрать летящие пули (нечестный урон после выбора)
+    // и показать выбор улучшения один раз на волну
     if (this.waveManager.waveCleared
       && this.lastUpgradeWave !== this.waveManager.wave) {
       this.lastUpgradeWave = this.waveManager.wave;
+      this.enemyBullets = [];
+      this.playerBullets = [];
       if (this.upgrades.showChoices(this.waveManager.wave)) return;
     }
   }

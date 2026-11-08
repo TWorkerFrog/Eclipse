@@ -185,7 +185,7 @@ const upgradeDefinitions = [
     id: 'healing_shards',
     type: 'unique',
     title: 'Лечебные осколки',
-    description: 'Подбор осколка лечит тебя',
+    description: 'Подбор осколка лечит на 8 HP',
     requiresUnique: null,
     apply(game) {
       game.ship.upgrades.healing_shards = true;
@@ -297,6 +297,8 @@ class UpgradeSystem {
       this.cardsElement.append(this.createCard(definition));
     }
     this.element.classList.remove('hidden');
+    // Затемнение фона, как на паузе
+    pauseDimmer.classList.remove('hidden');
     this.game.hud.hide();
     this.game.state = states.Selection;
     return true;
@@ -337,6 +339,7 @@ class UpgradeSystem {
 
   hide() {
     this.element.classList.add('hidden');
+    pauseDimmer.classList.add('hidden');
     this.cardsElement.replaceChildren();
   }
 

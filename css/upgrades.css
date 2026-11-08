@@ -18,7 +18,8 @@
   width: 260px;
   min-height: 200px;
   padding: 24px 20px;
-  background-color: color-mix(in srgb, var(--bg) 82%, transparent);
+  /* Почти полностью прозрачный фон: звёзды просвечивают */
+  background-color: color-mix(in srgb, var(--bg) 10%, transparent);
   border: 1px solid var(--muted);
   border-radius: 14px;
   color: var(--fg);
@@ -42,11 +43,17 @@
   box-shadow: 0 0 22px color-mix(in srgb, var(--fg) 30%, transparent);
 }
 
-/* Уникальные улучшения: красные, как игрок, с сильной пульсацией свечения */
+/* Уникальные улучшения: весь текст красный, как игрок */
 .upgrade-card-unique {
   border-color: color-mix(in srgb, var(--accent) 75%, transparent);
   animation: upgrade-float 3.2s ease-in-out infinite alternate,
     upgrade-glow 1.7s ease-in-out infinite alternate;
+}
+
+.upgrade-card-unique .upgrade-title,
+.upgrade-card-unique .upgrade-description {
+  color: var(--accent);
+  opacity: 1;
 }
 
 .upgrade-card-unique:nth-child(2) {
