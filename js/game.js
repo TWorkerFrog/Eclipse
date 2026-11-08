@@ -345,7 +345,9 @@ class Game {
     this.enemies = this.enemies.filter((enemy) => enemy.hp > 0);
   }
 
-  // Рикошет: ближайший враг в радиусе, которого пуля ещё не задела
+  // Рикошет: перенаправление пули после попадания. В Brotato снаряд бьёт
+  // в ближайшего непоражённого врага и умирает, если цели в радиусе нет;
+  // здесь же без цели отскок уходит в случайную сторону и пуля летит дальше
   tryRicochet(bullet) {
     if ((bullet.bouncesRemaining ?? 0) <= 0) return false;
 
@@ -363,13 +365,14 @@ class Game {
         targetDistance = distance;
       }
     }
-    if (!target) return false;
 
     bullet.bouncesRemaining -= 1;
-    const angleRadians = Math.atan2(
-      target.positionY - bullet.positionY,
-      target.positionX - bullet.positionX,
-    );
+    const angleRadians = target
+      ? Math.atan2(
+        target.positionY - bullet.positionY,
+        target.positionX - bullet.positionX,
+      )
+      : Math.random() * Math.PI * 2;
     bullet.velocityX = Math.cos(angleRadians) * bulletBase.regular.speed;
     bullet.velocityY = Math.sin(angleRadians) * bulletBase.regular.speed;
     return true;
@@ -429,11 +432,12 @@ class Game {
   }
 
   // Плавное следование камеры за кораблем игрока и наклон во время дэша.
+  // Lerp 8: чем живее камера, тем меньше уезжает точка прицела под курсором
   updateCamera(elapsedSeconds) {
     const targetCameraX = (this.ship.positionX - worldWidth / 2) * 0.08;
     const targetCameraY = (this.ship.positionY - worldHeight / 2) * 0.08;
-    this.cameraOffsetX += (targetCameraX - this.cameraOffsetX) * 3 * elapsedSeconds;
-    this.cameraOffsetY += (targetCameraY - this.cameraOffsetY) * 3 * elapsedSeconds;
+    this.cameraOffsetX += (targetCameraX - this.cameraOffsetX) * 8 * elapsedSeconds;
+    this.cameraOffsetY += (targetCameraY - this.cameraOffsetY) * 8 * elapsedSeconds;
 
     const targetTilt = this.ship.dashEffectRemainingSeconds > 0
       ? Math.sin(this.ship.dashDirectionRadians) * 0.03
@@ -537,10 +541,12 @@ const pauseDimmer = document.getElementById('pause-dimmer');
 const victoryEl = document.getElementById('victory');
 const gameoverEl = document.getElementById('gameover');
 const upgradeScreenEl = document.getElementById('upgrade-screen');
+const instructionsEl = document.getElementById('instructions');
 
 function hideAllScreens() {
   for (const element of [
     menuEl, settingsEl, pauseEl, victoryEl, gameoverEl, upgradeScreenEl,
+    instructionsEl,
   ]) {
     element.classList.add('hidden');
   }
@@ -555,6 +561,16 @@ document.getElementById('btn-gameover-menu').onclick = () => game.toMenu();
 
 document.getElementById('btn-settings').onclick = () => {
   menuEl.classList.add('hidden');
+  settingsEl.classList.remove('hidden');
+};
+
+document.getElementById('btn-instructions').onclick = () => {
+  settingsEl.classList.add('hidden');
+  instructionsEl.classList.remove('hidden');
+};
+
+document.getElementById('btn-instructions-back').onclick = () => {
+  instructionsEl.classList.add('hidden');
   settingsEl.classList.remove('hidden');
 };
 

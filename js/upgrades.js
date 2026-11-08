@@ -139,11 +139,11 @@ const upgradeDefinitions = [
     id: 'scavenger',
     type: 'unique',
     title: 'Падальщик',
-    description: 'Лечение на 5 HP за убийство обычной пулей',
+    description: 'Лечение на 2 HP за убийство обычной пулей',
     requiresUnique: null,
     apply(game) {
       game.ship.upgrades.scavenger = true;
-      game.ship.scavengerHealAmount = 5;
+      game.ship.scavengerHealAmount = 2;
     },
   },
   {
@@ -208,10 +208,10 @@ const upgradeDefinitions = [
     id: 'scavenger_heal',
     type: 'common',
     title: 'Жадность',
-    description: 'Увеличение лечения за убийство на 5 HP',
+    description: 'Увеличение лечения за убийство на 2 HP',
     requiresUnique: 'scavenger',
     apply(game) {
-      game.ship.scavengerHealAmount += 5;
+      game.ship.scavengerHealAmount += 2;
     },
   },
   {

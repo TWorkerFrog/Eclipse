@@ -124,17 +124,15 @@ class Ship {
       this.positionY += this.velocityY * elapsedSeconds;
     }
 
-    // Сквозные границы
-    if (this.positionX < -this.collisionRadiusPixels) {
-      this.positionX = worldWidth + this.collisionRadiusPixels;
-    } else if (this.positionX > worldWidth + this.collisionRadiusPixels) {
-      this.positionX = -this.collisionRadiusPixels;
-    }
-    if (this.positionY < -this.collisionRadiusPixels) {
-      this.positionY = worldHeight + this.collisionRadiusPixels;
-    } else if (this.positionY > worldHeight + this.collisionRadiusPixels) {
-      this.positionY = -this.collisionRadiusPixels;
-    }
+    // Глухие границы: корабль упирается в край арены
+    this.positionX = Math.max(
+      this.collisionRadiusPixels,
+      Math.min(worldWidth - this.collisionRadiusPixels, this.positionX),
+    );
+    this.positionY = Math.max(
+      this.collisionRadiusPixels,
+      Math.min(worldHeight - this.collisionRadiusPixels, this.positionY),
+    );
 
     this.updateShooting(elapsedSeconds, input, bullets);
   }

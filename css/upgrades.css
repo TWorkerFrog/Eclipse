@@ -42,9 +42,9 @@
   box-shadow: 0 0 22px color-mix(in srgb, var(--fg) 30%, transparent);
 }
 
-/* Уникальные улучшения: сильная пульсация свечения */
+/* Уникальные улучшения: красные, как игрок, с сильной пульсацией свечения */
 .upgrade-card-unique {
-  border-color: color-mix(in srgb, var(--fg) 60%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 75%, transparent);
   animation: upgrade-float 3.2s ease-in-out infinite alternate,
     upgrade-glow 1.7s ease-in-out infinite alternate;
 }
@@ -59,7 +59,7 @@
 
 .upgrade-title {
   font-family: 'Tsap-Tsarap', serif;
-  font-size: 30px;
+  font-size: 34px;
   letter-spacing: 0.08em;
   text-align: center;
 }
@@ -69,7 +69,7 @@
   color: var(--fg);
   opacity: 0.92;
   font-family: 'Tsap-Tsarap', serif;
-  font-size: 16px;
+  font-size: 18px;
   letter-spacing: 0.04em;
   line-height: 1.45;
   text-align: center;
@@ -87,10 +87,10 @@
 
 @keyframes upgrade-glow {
   from {
-    box-shadow: 0 0 14px color-mix(in srgb, var(--fg) 25%, transparent);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 30%, transparent);
   }
 
   to {
-    box-shadow: 0 0 34px color-mix(in srgb, var(--fg) 65%, transparent);
+    box-shadow: 0 0 34px color-mix(in srgb, var(--accent) 70%, transparent);
   }
 }

@@ -39,6 +39,29 @@
   </div>
 </div>
 
+<!-- Инструкция: доступна из настроек -->
+<div id="instructions" class="screen instructions-screen hidden">
+  <h2 class="subtitle">Как играть</h2>
+  <div class="instructions-body">
+    <div class="instructions-section">
+      <div class="instructions-heading">УПРАВЛЕНИЕ</div>
+      <p><b>WASD</b> движение, <b>мышь</b> прицел</p>
+      <p><b>ЛКМ</b> обычные пули, <b>ПКМ</b> особый выстрел, нужен заряд</p>
+      <p><b>Space</b> рывок, <b>P</b> пауза</p>
+    </div>
+    <div class="instructions-section">
+      <div class="instructions-heading">БОЙ</div>
+      <p>Убитые враги роняют <b>осколки</b>: подбирай их, они дают заряд особого выстрела</p>
+      <p>Особый выстрел летит <b>сквозь врагов</b> и гасит вражеские пули</p>
+      <p><b>Рывок</b> делает тебя неуязвимым, пока летишь</p>
+      <p>После каждой волны выбираешь <b>одно из трёх улучшений</b></p>
+    </div>
+  </div>
+  <nav class="menu-buttons">
+    <button id="btn-instructions-back" class="menu-btn">Продолжить</button>
+  </nav>
+</div>
+
 <!-- Главное меню -->
 <div id="menu" class="screen">
   <div class="title-block">
@@ -57,6 +80,7 @@
   <h2 class="subtitle">Настройки</h2>
   <nav class="menu-buttons settings-actions settings-main-actions">
     <button id="btn-fullscreen" class="menu-btn">Полный экран</button>
+    <button id="btn-instructions" class="menu-btn">Как играть</button>
     <button id="btn-back" class="menu-btn">Назад</button>
   </nav>
 </div>
